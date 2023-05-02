@@ -36,6 +36,8 @@ import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 
 
 class MainActivity : AppCompatActivity() {
+
+    //Declaración de las variables necesarias.
     private lateinit var latitudeEditText: EditText
     private lateinit var longitudeEditText: EditText
     private lateinit var trazarButton: Button
@@ -52,16 +54,19 @@ class MainActivity : AppCompatActivity() {
     var map: MapView? = null
     private lateinit var boton: Button
 
+    //Inicializa el objeto con la propiedad de retrofit
     private val direccionesApi: DireccionesApi by lazy {
         Direcciones.retrofitService
     }
 
-    //your items
+    //Items
     var items = ArrayList<OverlayItem>()
 
     @SuppressLint("MissingInflatedId", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        //Mandamos llamar nuestra funcion para revisar permisos
         checkPermissions()
         val ctx: Context = applicationContext
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
@@ -85,7 +90,7 @@ class MainActivity : AppCompatActivity() {
                 puntoDeLlegada = GeoPoint(latitude, longitude)
                 map?.overlays?.remove(segundoMarcador)
                 segundoMarcador = Marker(map)
-                segundoMarcador!!.position = GeoPoint(latitude,longitude)
+                segundoMarcador!!.position = GeoPoint(latitude, longitude)
                 segundoMarcador?.setAnchor(Marker.ANCHOR_BOTTOM, Marker.ANCHOR_CENTER)
                 segundoMarcador?.title = "Destino"
                 map?.overlays?.add(segundoMarcador)
@@ -158,42 +163,48 @@ class MainActivity : AppCompatActivity() {
         )
         mOverlay.setFocusItemsOnTap(true)
 
-        // Crear un nuevo Overlay para capturar eventos de toque
+        // Crear un objeto de tipo Overlay para manejar los eventos táctiles en el mapa
         val touchOverlay = object : Overlay() {
-
-            private val gestureDetector =
-                GestureDetector(ctx, object : GestureDetector.SimpleOnGestureListener() {
-                    override fun onLongPress(e: MotionEvent) {
+            // Crear un objeto GestureDetector para detectar el evento de toque largo en el mapa
+            private val gestureDetector = GestureDetector(ctx, object : GestureDetector.SimpleOnGestureListener() {
+                // Acción a realizar cuando se detecte un toque largo
+                override fun onLongPress(e: MotionEvent) {
+                    if (colocar) {
                         // Obtener las coordenadas del punto donde se realizó la pulsación
-                        if (colocar) {
-                            puntoDeLlegada =
-                                map?.projection!!.fromPixels(e.x.toInt(), e.y.toInt()) as GeoPoint?
-                            map?.overlays?.remove(segundoMarcador)
-                            segundoMarcador = Marker(map)
-                            segundoMarcador?.position = puntoDeLlegada
-                            segundoMarcador?.setAnchor(Marker.ANCHOR_BOTTOM, Marker.ANCHOR_CENTER)
-                            segundoMarcador?.title = "Destino"
-                            map?.overlays?.add(segundoMarcador)
+                        puntoDeLlegada = map?.projection!!.fromPixels(e.x.toInt(), e.y.toInt()) as GeoPoint?
+                        // Eliminar el segundo marcador existente (si lo hay)
+                        map?.overlays?.remove(segundoMarcador)
+                        // Crear un nuevo marcador en las coordenadas del destino seleccionado
+                        segundoMarcador = Marker(map)
+                        segundoMarcador?.position = puntoDeLlegada
+                        segundoMarcador?.setAnchor(Marker.ANCHOR_BOTTOM, Marker.ANCHOR_CENTER)
+                        segundoMarcador?.title = "Destino"
+                        // Agregar el nuevo marcador al mapa
+                        map?.overlays?.add(segundoMarcador)
 
-                            ruta.setPoints(emptyList())
-                            map?.overlays?.remove(ruta)
-                            coords()
-                        }
-                        // Redibujar el mapa para mostrar el nuevo marcador
-                        map?.invalidate()
+                        // Limpiar la ruta existente y obtener nuevas coordenadas para la nueva ruta
+                        ruta.setPoints(emptyList())
+                        map?.overlays?.remove(ruta)
+                        coords()
                     }
-                })
+                    // Redibujar el mapa para mostrar el nuevo marcador (y ruta)
+                    map?.invalidate()
+                }
+            })
 
+            // Este evento se llama cada que hay un toque en el mapa
             override fun onTouchEvent(event: MotionEvent, mapView: MapView): Boolean {
+                // Pasar el evento al objeto GestureDetector para detectar si se trata de un toque largo
                 gestureDetector.onTouchEvent(event)
                 return super.onTouchEvent(event, mapView)
             }
         }
 
-        // Agregar el Overlay de eventos de toque al mapa
+        // Se agregan los eventos de toques en el mapa.
         map?.overlays?.add(touchOverlay)
         map?.overlays!!.add(mOverlay)
 
+        //Se intercalan las funcionalidades del boton de trazar ruta.
         var mensaje = true
         boton.setOnClickListener {
             if (colocar) {
@@ -213,29 +224,36 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        //se agrega la funcionalidad de zoom y minimapa
-        val compassOverlay = CompassOverlay(applicationContext, InternalCompassOrientationProvider(applicationContext), map)
+        // Se crea una superposición de la brújula en el mapa, que se habilita para que la dirección del norte esté en la parte superior
+        val compassOverlay = CompassOverlay(
+            applicationContext, InternalCompassOrientationProvider(applicationContext), map
+        )
         compassOverlay.enableCompass()
         map!!.overlays.add(compassOverlay)
 
+        // Se crea una superposición de gestos de rotación, que permite al usuario girar el mapa utilizando gestos de rotación de dos dedos
         val rotationGestureOverlay = RotationGestureOverlay(map)
         rotationGestureOverlay.isEnabled
         map!!.setMultiTouchControls(true)
         map!!.overlays.add(rotationGestureOverlay)
 
+        // Se establece un nivel de zoom para el mapa
         mapController.setZoom(18)
 
-        val dm : DisplayMetrics = this.resources.displayMetrics
+        // Se crea una superposición de barra de escala, que muestra la escala del mapa en términos de distancia en metros y millas
+        val dm: DisplayMetrics = this.resources.displayMetrics
         val scaleBarOverlay = ScaleBarOverlay(map)
         scaleBarOverlay.setCentred(true)
         scaleBarOverlay.setScaleBarOffset(dm.widthPixels / 2, 10)
         map!!.overlays.add(scaleBarOverlay)
 
+        // Se crea una superposición de minimapa, que muestra una vista general del mapa completo y permite al usuario navegar a diferentes áreas del mapa
         val minimapOverlay = MinimapOverlay(this, map!!.tileRequestCompleteHandler)
         minimapOverlay.width = dm.widthPixels / 5
         minimapOverlay.height = dm.heightPixels / 5
         map!!.overlays.add(minimapOverlay)
 
+        // Se invalida el mapa para que los cambios realizados en las superposiciones se reflejen en el mapa
         map!!.invalidate()
     }
 
@@ -251,15 +269,22 @@ class MainActivity : AppCompatActivity() {
         stopLocationUpdates()
     }
 
-    fun checkPermissions() {
+    private fun checkPermissions() {
+        // Verifica si se tiene el permiso de ubicación fina o GPS.
         if (ContextCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+            ) != PackageManager.PERMISSION_GRANTED ||
+            // Verifica si se tiene el permiso de ubicación gruesa (datos y wifi para GPS).
+            ContextCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+            ) != PackageManager.PERMISSION_GRANTED ||
+
+            // Verifica si se tiene el permiso de escritura en el almacenamiento externo.
+            ContextCompat.checkSelfPermission(
                 this, Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            // Si uno o más de los permisos necesarios no se tienen, se pide al usuario que los conceda
             ActivityCompat.requestPermissions(
                 this, arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -270,12 +295,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Esta es una función que se llama automáticamente cuando el usuario responde a la solicitud de permiso
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // Si el código de solicitud es 0, significa que se está evaluando la respuesta de la solicitud de permiso.
         when (requestCode) {
             0 -> {
+                // Si grantResults[0] es igual a PackageManager.PERMISSION_GRANTED, significa que el permiso fue concedido
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     return
                 } else {
@@ -287,32 +315,44 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
+        // Se solicita la actualización de la ubicación con el cliente de ubicación fusionado
         fusedLocationClient.requestLocationUpdates(
-            locationRequest, locationCallback, Looper.getMainLooper()
+            locationRequest, // Se pasa la solicitud de ubicación definida anteriormente
+            locationCallback, // Se define el callback que manejará las actualizaciones de ubicación
+            Looper.getMainLooper() // Se especifica el looper principal para recibir actualizaciones en el hilo principal
         )
     }
 
     private fun stopLocationUpdates() {
+        // Se remueven las actualizaciones de ubicación con el cliente de ubicación fusionado
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
+
     fun coords() {
+        // Creamos un nuevo scope para trabajar con corrutinas y enviamos el trabajo a un hilo en segundo plano
         CoroutineScope(Dispatchers.IO).launch {
+            // Obtenemos las coordenadas de inicio y final
             val inicio = "${puntoDeSalida!!.longitude},${puntoDeSalida!!.latitude}"
             val final = "${puntoDeLlegada!!.longitude},${puntoDeLlegada!!.latitude}"
             val api = "5b3ce3597851110001cf624835945259895e4e9d885c351e926dda3a"
+            // Realizamos la solicitud a la API con la función getDirections, definida en la interfaz DireccionesApi
             val coordenadas = direccionesApi.getDirections(api, inicio, final)
+            // Obtenemos la lista de features de las coordenadas devueltas por la API
             val features = coordenadas.features
             for (feature in features) {
                 val geometry = feature.geometry
                 val coordinates = geometry.coordinates
-
                 for (coordenada in coordinates) {
+                    // Creamos un nuevo punto GeoPoint con las coordenadas obtenidas
                     val punto = GeoPoint(coordenada[1], coordenada[0])
+                    // Añadimos el punto a la ruta
                     ruta.addPoint(punto)
                 }
+                // Añadimos la ruta al mapa
                 map?.overlays?.add(ruta)
             }
         }
     }
+
 }
