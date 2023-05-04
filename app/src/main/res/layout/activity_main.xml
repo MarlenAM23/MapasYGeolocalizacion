@@ -11,21 +11,21 @@
 
     <EditText
         android:id="@+id/latitudeEditText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="201dp"
+        android:layout_height="45dp"
         android:ems="10"
         android:inputType="text"
-        android:text="Name"
+        android:hint="Latitud"
         app:layout_constraintStart_toStartOf="parent"
         tools:ignore="MissingConstraints" />
 
     <EditText
         android:id="@+id/longitudeEditText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="201dp"
+        android:layout_height="45dp"
         android:ems="10"
         android:inputType="text"
-        android:text="Name"
+        android:hint="Longitud"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/latitudeEditText"
         tools:ignore="MissingConstraints" />
@@ -35,7 +35,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="52dp"
-        android:text="Button"
+        android:text="Agregar destino"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"

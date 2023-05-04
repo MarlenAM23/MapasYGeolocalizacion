@@ -70,7 +70,6 @@ class MainActivity : AppCompatActivity() {
         checkPermissions()
         val ctx: Context = applicationContext
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
-
         setContentView(R.layout.activity_main)
 
 
@@ -146,7 +145,7 @@ class MainActivity : AppCompatActivity() {
         primerMarcador = Marker(map)
         primerMarcador?.position = puntoDeSalida
         primerMarcador?.setAnchor(Marker.ANCHOR_BOTTOM, Marker.ANCHOR_CENTER)
-        primerMarcador?.title = "UBICACION ACTUAL"
+        primerMarcador?.title = "Ubicación actual"
         map?.overlays?.add(primerMarcador)
         map?.invalidate()
 
